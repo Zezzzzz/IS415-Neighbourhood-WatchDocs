@@ -14,7 +14,7 @@ for (p in packages){
 Singapore Planning Subzone (MP14_SUBZONE_WEB_PL)
 ```{r}
 mpsz = st_read(dsn = "data", layer = "MP14_SUBZONE_WEB_PL")
-
+mpsz <- mpsz[order(mpsz$SUBZONE_N),]
 ```
 
 Singapore Residents by Subzone, Age Group and Sex (Gender)
@@ -63,6 +63,8 @@ names(tcm)[names(tcm) == "tcm_address"] <- "address"
 Combine TCM and clinics
 ```{r}
 clinics_combined <- rbind(clinics, tcm)
+mpsz_clinics <- st_join(st_as_sf(clinics_combined, 
+                                 coords = c("X", "Y"), crs = st_crs(mpsz)), mpsz)
 
 ```
 

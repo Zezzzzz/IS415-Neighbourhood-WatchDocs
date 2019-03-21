@@ -26,37 +26,55 @@ shinyServer(function(input, output, session) {
   })
   
   
-  observeEvent(c(input$clinicType, input$subzone), {
-    req(input$clinicType)
-    req(input$subzone)
+  observeEvent(c(input$Type, input$subzone), {
+    #req(input$Type)
+    #req(input$subzone)
     
-    #select subzone
-    selectedSubzone <- reactive({
-      if(input$clinicType == "gpclinics") {
-        clinics_sf %>% filter(SUBZONE_N == input$subzone)
-      } else {
-        tcm_sf %>% filter(SUBZONE_N == input$subzone)
-      }
+    clinic_results <- reactive({
+      mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
     })
     
-    if(input$clinicType == "gpclinics") {
-      leafletProxy("map", data = selectedSubzone()) %>%
-          clearMarkers() %>%
-          addAwesomeMarkers(lng = ~LONG,
-                     lat = ~LAT,
-                     popup = paste("", selectedSubzone()$clinic_name, "<br><br>",
-                                   "", selectedSubzone()$address), 
-                     icon = makeAwesomeIcon(icon = "icon", markerColor = "blue"))
+    hdb_results <- reactive({
+      mpsz_HDB %>% filter(SUBZONE_N == input$subzone)
+    })
+    
+    if(all(c("clinics_combined", "hdb") %in% input$Type)) {
+      leafletProxy("map", data = clinic_results()) %>%
+        clearMarkers() %>%
+        addAwesomeMarkers(lng = ~LONG,
+                          lat = ~LAT,
+                          popup = paste("", clinic_results()$clinic_name, "<br><br>",
+                                        "", clinic_results()$address),
+                          icon = makeAwesomeIcon(icon = "icon", markerColor = "blue"))
+      
+      leafletProxy("map", data = hdb_results()) %>%
+        addAwesomeMarkers(lng = ~LONG,
+                          lat = ~LAT,
+                          popup = paste("", hdb_results()$blk_no_street, "<br><br>",
+                                        "Elderly Population: ", hdb_results()$No_of_Elderly_in_block),
+                          icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
+      
+    } else if(c("clinics_combined") %in% input$Type) {
+      leafletProxy("map", data = clinic_results()) %>%
+        clearMarkers() %>%
+        addAwesomeMarkers(lng = ~LONG,
+                          lat = ~LAT,
+                          popup = paste("", clinic_results()$clinic_name, "<br><br>",
+                                        "", clinic_results()$address),
+                          icon = makeAwesomeIcon(icon = "icon", markerColor = "blue"))
+      
+    } else if(c("hdb") %in% input$Type) {
+      leafletProxy("map", data = hdb_results()) %>%
+        clearMarkers() %>%
+        addAwesomeMarkers(lng = ~LONG,
+                          lat = ~LAT,
+                          popup = paste("", hdb_results()$blk_no_street, "<br><br>",
+                                        "Elderly Population: ", hdb_results()$No_of_Elderly_in_block),
+                          icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
       
     } else {
-      leafletProxy("map", data = selectedSubzone()) %>%
-          clearMarkers() %>%
-          addAwesomeMarkers(lng = ~LONG,
-                     lat = ~LAT,
-                     popup = paste("", selectedSubzone()$tcm_place_name, "<br><br>",
-                                   "", selectedSubzone()$tcm_address), 
-                     icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
-      
+      leafletProxy("map", data = NULL) %>%
+        clearMarkers()
     }
   })
 })
