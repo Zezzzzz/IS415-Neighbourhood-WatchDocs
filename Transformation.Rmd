@@ -162,7 +162,8 @@ mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
 ```
 
 ```{r}
-class(mpsz_HDB)
+clinics_combined <- st_as_sf(clinics_combined, coords = c("X", "Y"))
+class(clinics_combined)
 ```
 
 ```{r}
@@ -171,10 +172,30 @@ clinics_combined['capacity'] <- 2
 ```
 
 ```{r}
-
+mpsz_HDB_coords <- mpsz_HDB %>% st_coordinates() 
+clinics_combined_coords <- clinics_combined %>% st_coordinates()
 ```
 
 ```{r}
-dm <- distance()
-acc_hansen <- data.frame(ac(mpsz_HDB$No_of_Elderly_in_block, clinics_combined$capacity))
+dm <- distance(mpsz_HDB_coords, clinics_combined_coords)
+acc_hansen <- data.frame(ac(mpsz_HDB$No_of_Elderly_in_block, clinics_combined$capacity, dm, power=0.01, family="Hansen"))
+colnames(acc_hansen) <- "accHansen"
+acc_hansen <- tbl_df(acc_hansen)
+HDB_acc <- bind_cols(mpsz_HDB, acc_hansen)
+```
+
+```{r}
+tmap_mode("view")
+```
+
+```{r}
+tm_shape(mpsz_HDB)+
+  tm_symbols(size = 0.1)+
+tm_shape(HDB_acc)+
+tm_bubbles(col = "accHansen",
+           n=5,
+           style = "quantile",
+           size = 0.1,
+           border.col = "black",
+           border.lwd = 1)
 ```
