@@ -9,7 +9,6 @@ library(tidyverse)
 #####################################################################
 # Singapore Planning Subzone (MP14_SUBZONE_WEB_PL)
 mpsz <- st_read(dsn = "data", layer = "MP14_SUBZONE_WEB_PL")
-mpsz_ordered_by_subzone <- mpsz[order(mpsz$SUBZONE_N),]
 
 # Singapore Residents by Subzone, Age Group and Sex (June 2017)
 population <- read_csv("data/respopagsex2000to2017.csv")
@@ -91,31 +90,48 @@ mpsz_HDB$`4room_total` <- mpsz_HDB$`4room_sold`
 mpsz_HDB_4_room_added = aggregate(mpsz_HDB$`4room_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
   rename('No_of_4_room' = 'x') 
 
-# No. of 5 rooms and exec in each block
 mpsz_HDB$`5room_exec_total` <- mpsz_HDB$`5room_sold` + mpsz_HDB$`exec_sold`
 
 mpsz_HDB_5_room_exec_added = aggregate(mpsz_HDB$`5room_exec_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
   rename('No_of_5_room_exec' = 'x')   
 
-# No. of 1-2/3/4/5 & exec Units per subzone
 mpsz_HDB_added <- left_join(mpsz_HDB_1_2_room, mpsz_HDB_3_room_added, by ='SUBZONE') %>%
   left_join(., mpsz_HDB_4_room_added, by = 'SUBZONE') %>%
   left_join(., mpsz_HDB_5_room_exec_added, by = 'SUBZONE')
 
-# Total No. of Units per subzone
 mpsz_HDB_added$`total_units` <- mpsz_HDB_added$`No_of_1_2_room` + mpsz_HDB_added$`No_of_3_room` + mpsz_HDB_added$`No_of_4_room` + mpsz_HDB_added$`No_of_5_room`
 
 # Total Number of 1-2/3/4/5 Room Units
-total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room) 
-total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room) 
-total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room) 
-total_5_room_exec_units <- sum(mpsz_HDB_added$No_of_5_room_exec) 
+total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room)
+total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room)
+total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room)
+total_5_room_units <- sum(mpsz_HDB_added$No_of_5_room)
 
+popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 1- And 2-Room Flats"]
+
+ifelse(mpsz_HDB$`5room_sold` == 0, 0, mpsz_HDB$`5room_sold`/total_5_room_units) *
+                                      popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 5-Room Flats"]
 
 # No. of elderly per block in every subzone
-mpsz_HDB$No_of_Elderly_in_block_1_2 <- ifelse(mpsz_HDB$`1_2room_total` == 0, 0, mpsz_HDB$`1_2room_total`/total_1_2_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 1- And 2-Room Flats"]
-mpsz_HDB$No_of_Elderly_in_block_3 <- ifelse(mpsz_HDB$`3room_total` == 0, 0, mpsz_HDB$`3room_total`/total_3_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 3-Room Flats"] 
-mpsz_HDB$No_of_Elderly_in_block_4 <- ifelse(mpsz_HDB$`4room_total` == 0, 0, mpsz_HDB$`4room_total`/total_4_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 4-Room Flats"]
-mpsz_HDB$No_of_Elderly_in_block_5 <- ifelse(mpsz_HDB$`5room_exec_total` == 0, 0, mpsz_HDB$`5room_exec_total`/total_5_room_exec_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 5-Room And Executive Flats"]
+total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room)
+total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room)
+total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room)
+total_5_room_units <- sum(mpsz_HDB_added$No_of_5_room)
+
+mpsz_HDB$No_of_Elderly_in_block_1_2 <- ifelse(mpsz_HDB$`1_2room_sold` == 0, 0, mpsz_HDB$`1_2room_sold`/total_1_2_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 1- And 2-Room Flats"]
+
+mpsz_HDB$No_of_Elderly_in_block_3 <- ifelse(mpsz_HDB$`3room_sold` == 0, 0, mpsz_HDB$`3room_sold`/total_3_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 3-Room Flats"]
+
+mpsz_HDB$No_of_Elderly_in_block_4 <- ifelse(mpsz_HDB$`4room_sold` == 0, 0, mpsz_HDB$`4room_sold`/total_4_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 4-Room Flats"]
+
+mpsz_HDB$No_of_Elderly_in_block_5 <- ifelse(mpsz_HDB$`5room_sold` == 0, 0, mpsz_HDB$`5room_sold`/total_5_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 5-Room And Executive Flats"]
+
+
 mpsz_HDB$No_of_Elderly_in_block <- mpsz_HDB$No_of_Elderly_in_block_1_2 + mpsz_HDB$No_of_Elderly_in_block_3 + mpsz_HDB$No_of_Elderly_in_block_4 + mpsz_HDB$No_of_Elderly_in_block_5
-mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
+
+   + mpsz_HDB_added$`3_room_sold`/total_3_room_units *
+                                      popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 3-Room Flats"]
+   + mpsz_HDB_added$`4_room_sold`/total_4_room_units *
+                                      popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 4-Room Flats"]
+   + mpsz_HDB_added$`5_room_sold`/total_5_room_units *
+                                      popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 5-Room Flats"]

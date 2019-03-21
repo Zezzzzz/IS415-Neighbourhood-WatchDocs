@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r echo=TRUE, eval=TRUE, message= FALSE}
-packages = c('rgdal', 'maptools', 'raster','spatstat', 'tmap', 'sf', 'tidyverse', 'SpatialAcc') 
+packages = c('rgdal', 'maptools', 'raster','spatstat', 'tmap', 'sf', 'tidyverse', 'SpatialAcc', 'tbart') 
 for (p in packages){ 
   if(!require(p, character.only = T)){ 
     install.packages(p) } 
@@ -198,4 +198,26 @@ tm_bubbles(col = "accHansen",
            size = 0.1,
            border.col = "black",
            border.lwd = 1)
+```
+
+```{r}
+mpsz_HDB_sp <- as(mpsz_HDB, "Spatial")
+clinics_combined_sp <- as(clinics_combined, "Spatial")
+```
+
+```{r}
+proj4string(clinics_combined_sp) <- CRS("+init=epsg:3414")
+spTransform(mpsz_HDB_sp, "+init=epsg:3414")
+```
+
+```{r}
+mpsz_HDB_sp <- mpsz_HDB_sp[mpsz_HDB_sp@data$SUBZONE_N=="TAMAN JURONG", ]
+```
+
+```{r}
+eucDist <- euc.dists(mpsz_HDB_sp, clinics_combined_sp)
+```
+
+```{r}
+
 ```
