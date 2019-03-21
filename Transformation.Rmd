@@ -318,11 +318,6 @@ total_5_room_exec_units <- sum(mpsz_HDB_added$No_of_5_room_exec)
 
 No. of elderly per block in every subzone
 ```{r}
-total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room) 
-total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room) 
-total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room) 
-total_5_room_units <- sum(mpsz_HDB_added$No_of_5_room) 
-
 mpsz_HDB$No_of_Elderly_in_block_1_2 <- ifelse(mpsz_HDB$`1_2room_total` == 0, 0, mpsz_HDB$`1_2room_total`/total_1_2_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 1- And 2-Room Flats"]
 
 mpsz_HDB$No_of_Elderly_in_block_3 <- ifelse(mpsz_HDB$`3room_total` == 0, 0, mpsz_HDB$`3room_total`/total_3_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 3-Room Flats"] 
