@@ -1,0 +1,163 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r echo=TRUE, eval=TRUE, message= FALSE}
+packages = c('rgdal', 'maptools', 'raster','spatstat', 'tmap', 'sf', 'tidyverse') 
+for (p in packages){ 
+  if(!require(p, character.only = T)){ 
+    install.packages(p) } 
+  library(p,character.only = T) }
+```
+
+Singapore Planning Subzone (MP14_SUBZONE_WEB_PL)
+```{r}
+mpsz = st_read(dsn = "data", layer = "MP14_SUBZONE_WEB_PL")
+
+```
+
+Singapore Residents by Subzone, Age Group and Sex (Gender)
+```{r}
+population = read_csv("data/respopagsex2000to2017.csv")
+
+```
+
+Singapore Residents by Subzone, Age Group and Sex, June 2017 (Gender)
+```{r}
+popage2017pre <- population %>%
+  filter(Time == 2017) %>%
+  filter(AG == "65_to_69" | AG == "70_to_74" | AG == "75_to_79" | AG == "80_to_84" | AG == "85_and_over") %>%
+  group_by(SZ)
+
+popage2017pre_added <- aggregate(Pop ~ SZ, popage2017pre, sum)
+
+```
+
+
+Total Number of Clinics in Singapore
+```{r}
+clinics = read_csv("data/clinics_hcidirectory.csv")
+
+clinics_essentials <- c("clinic_name", "address", "LAT", "LONG", "X", "Y")
+
+clinics <- clinics[clinics_essentials]
+```
+
+
+Total Number of TCM Clinics in Singapore
+```{r}
+tcm = read_csv("data/tcm_tcmboard.csv")
+
+tcm <- tcm[!duplicated(tcm$tcm_place_name), ]
+  
+tcm_essentials <- c("tcm_place_name", "tcm_address", "LAT", "LONG", "X", "Y")
+
+tcm <- tcm[tcm_essentials]
+
+names(tcm)[names(tcm) == "tcm_place_name"] <- "clinic_name"
+names(tcm)[names(tcm) == "tcm_address"] <- "address"
+```
+
+
+Combine TCM and clinics
+```{r}
+clinics_combined <- rbind(clinics, tcm)
+
+```
+
+Number of HDB blocks per planning subzone
+```{r}
+HDB = read_csv("data/hdb_property_information.csv")
+
+HDB_sf <- st_as_sf(HDB, coords = c("X", "Y"), crs = st_crs(mpsz))
+
+```
+
+Residents by Age Group & Type of Dwelling, Annual
+```{r}
+popByDwelling = read_csv("data/residents-by-age-group-and-type-of-dwelling-detailed-categories-annual.csv")
+
+```
+
+Residents by Age Group & Type of Dwelling, Annual 2017
+```{r}
+popByDwelling2017 <- popByDwelling %>%
+  filter(year == 2017) %>%
+  filter(level_1 == "65-69 Years" 
+         | level_1 == "85 Years & Over" 
+         | level_1 == "70-74 Years" 
+         | level_1 == "75-79 Years"  
+         | level_1 == "80-84 Years") %>%
+  group_by(level_3)
+
+popByDwelling2017
+popByDwelling2017_added <- aggregate(value ~ level_3, popByDwelling2017, sum)
+
+```
+
+
+No. of blocks per subzone
+```{r}
+mpsz_HDB <- st_join(HDB_sf,mpsz)
+
+mpsz_HDB$`1_2room_total` <- mpsz_HDB$`1room_sold` + mpsz_HDB$`2room_sold` + mpsz_HDB$`1room_rental` + mpsz_HDB$`2room_rental`
+
+mpsz_HDB_1_2_room = aggregate(mpsz_HDB$`1_2room_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
+  rename('No_of_1_2_room' = 'x') 
+
+mpsz_HDB$`3room_total` <- mpsz_HDB$`3room_sold` + mpsz_HDB$`3room_rental` + mpsz_HDB$`other_room_rental`
+
+mpsz_HDB_3_room_added = aggregate(mpsz_HDB$`3room_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
+  rename('No_of_3_room' = 'x') 
+
+mpsz_HDB$`4room_total` <- mpsz_HDB$`4room_sold`
+
+mpsz_HDB_4_room_added = aggregate(mpsz_HDB$`4room_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
+  rename('No_of_4_room' = 'x') 
+
+mpsz_HDB$`5room_exec_total` <- mpsz_HDB$`5room_sold` + mpsz_HDB$`exec_sold`
+
+mpsz_HDB_5_room_exec_added = aggregate(mpsz_HDB$`5room_exec_total`, by=list(SUBZONE=mpsz_HDB$SUBZONE_N), FUN=sum) %>%
+  rename('No_of_5_room_exec' = 'x')   
+
+mpsz_HDB_added <- left_join(mpsz_HDB_1_2_room, mpsz_HDB_3_room_added, by ='SUBZONE') %>%
+  left_join(., mpsz_HDB_4_room_added, by = 'SUBZONE') %>%
+  left_join(., mpsz_HDB_5_room_exec_added, by = 'SUBZONE')
+
+mpsz_HDB_added$`total_units` <- mpsz_HDB_added$`No_of_1_2_room` + mpsz_HDB_added$`No_of_3_room` + mpsz_HDB_added$`No_of_4_room` + mpsz_HDB_added$`No_of_5_room`
+```
+
+```{r}
+total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room) 
+total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room) 
+total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room) 
+total_5_room_exec_units <- sum(mpsz_HDB_added$No_of_5_room_exec) 
+
+```
+
+
+No. of elderly per block in every subzone
+```{r}
+total_1_2_room_units <- sum(mpsz_HDB_added$No_of_1_2_room) 
+total_3_room_units <- sum(mpsz_HDB_added$No_of_3_room) 
+total_4_room_units <- sum(mpsz_HDB_added$No_of_4_room) 
+total_5_room_units <- sum(mpsz_HDB_added$No_of_5_room) 
+
+mpsz_HDB$No_of_Elderly_in_block_1_2 <- ifelse(mpsz_HDB$`1_2room_total` == 0, 0, mpsz_HDB$`1_2room_total`/total_1_2_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 1- And 2-Room Flats"]
+
+mpsz_HDB$No_of_Elderly_in_block_3 <- ifelse(mpsz_HDB$`3room_total` == 0, 0, mpsz_HDB$`3room_total`/total_3_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 3-Room Flats"] 
+
+mpsz_HDB$No_of_Elderly_in_block_4 <- ifelse(mpsz_HDB$`4room_total` == 0, 0, mpsz_HDB$`4room_total`/total_4_room_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 4-Room Flats"]
+
+mpsz_HDB$No_of_Elderly_in_block_5 <- ifelse(mpsz_HDB$`5room_exec_total` == 0, 0, mpsz_HDB$`5room_exec_total`/total_5_room_exec_units) * popByDwelling2017_added$value[popByDwelling2017_added$level_3=="HDB 5-Room And Executive Flats"]
+                                    
+
+mpsz_HDB$No_of_Elderly_in_block <- mpsz_HDB$No_of_Elderly_in_block_1_2 + mpsz_HDB$No_of_Elderly_in_block_3 + mpsz_HDB$No_of_Elderly_in_block_4 + mpsz_HDB$No_of_Elderly_in_block_5
+```
+
+
+```{r}
+mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
+
+```
