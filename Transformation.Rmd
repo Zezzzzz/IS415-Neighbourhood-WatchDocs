@@ -63,9 +63,8 @@ names(tcm)[names(tcm) == "tcm_address"] <- "address"
 Combine TCM and clinics
 ```{r}
 clinics_combined <- rbind(clinics, tcm)
-mpsz_clinics <- st_join(st_as_sf(clinics_combined, 
+clinics_combined <- st_join(st_as_sf(clinics_combined, 
                                  coords = c("X", "Y"), crs = st_crs(mpsz)), mpsz)
-
 ```
 
 Number of HDB blocks per planning subzone
@@ -164,22 +163,16 @@ mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
 ```
 
 ```{r}
-clinics_combined <- st_as_sf(clinics_combined, coords = c("X", "Y"))
-class(clinics_combined)
+class(mpsz_clinics)
 ```
-
 ```{r}
-mpsz_HDB <- st_transform(mpsz_HDB, 3414)
-st_crs(mpsz_HDB)
-clinics_combined <- st_crs(clinics_combined, 3414)
-st_crs(clinics_combined)
+# st_crs(mpsz_clinics) <- st_transform(mpsz_clinics, 3414)
+# st_crs(mpsz_clinics)
 ```
 
 ```{r}
 #assign capacity of 2 per clinic
 clinics_combined['capacity'] <- 2
-st_crs(clinics_combined) <- st_crs(mpsz)
-clinics_combined <- st_join(clinics_combined, mpsz)
 ```
 
 ```{r}
@@ -220,4 +213,24 @@ clinics_combined_filtered <- na.omit(clinics_combined_filtered)
 ```{r}
 mpsz_HDB_filtered_sp <- as_Spatial(mpsz_HDB_filtered)
 clinics_combined_filtered_sp <- as_Spatial(clinics_combined_filtered)
+```
+
+```{r}
+model1 <- allocations(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, p=4)
+head(model1)
+```
+
+```{r}
+sum(model1$allocdist)
+```
+
+```{r}
+optimal_loc <- unique(model1$allocation)
+optimal_loc <- clinics_combined_filtered_sp[optimal_loc, ]
+head(optimal_loc)
+```
+
+```{r}
+optimal_loc <- mpsz_HDB_filtered_sp[optimal_loc, ]
+head(optimal_loc)
 ```
