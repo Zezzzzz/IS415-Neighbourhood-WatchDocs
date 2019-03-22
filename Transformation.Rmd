@@ -167,8 +167,17 @@ class(clinics_combined)
 ```
 
 ```{r}
+mpsz_HDB <- st_transform(mpsz_HDB, 3414)
+st_crs(mpsz_HDB)
+clinics_combined <- st_crs(clinics_combined, 3414)
+st_crs(clinics_combined)
+```
+
+```{r}
 #assign capacity of 2 per clinic
 clinics_combined['capacity'] <- 2
+st_crs(clinics_combined) <- st_crs(mpsz)
+clinics_combined <- st_join(clinics_combined, mpsz)
 ```
 
 ```{r}
@@ -201,23 +210,12 @@ tm_bubbles(col = "accHansen",
 ```
 
 ```{r}
-mpsz_HDB_sp <- as(mpsz_HDB, "Spatial")
-clinics_combined_sp <- as(clinics_combined, "Spatial")
+mpsz_HDB_filtered <- mpsz_HDB[mpsz_HDB$SUBZONE_N=="ADMIRALTY", ]
+clinics_combined_filtered <- clinics_combined[clinics_combined$SUBZONE_N=="ADMIRALTY", ]
+clinics_combined_filtered <- na.omit(clinics_combined_filtered)
 ```
 
 ```{r}
-proj4string(clinics_combined_sp) <- CRS("+init=epsg:3414")
-spTransform(mpsz_HDB_sp, "+init=epsg:3414")
-```
-
-```{r}
-mpsz_HDB_sp <- mpsz_HDB_sp[mpsz_HDB_sp@data$SUBZONE_N=="TAMAN JURONG", ]
-```
-
-```{r}
-eucDist <- euc.dists(mpsz_HDB_sp, clinics_combined_sp)
-```
-
-```{r}
-
+mpsz_HDB_filtered_sp <- as_Spatial(mpsz_HDB_filtered)
+clinics_combined_filtered_sp <- as_Spatial(clinics_combined_filtered)
 ```
