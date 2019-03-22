@@ -25,7 +25,7 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           inputId = "Type", 
           label = "Select Type",
           choices = c("Clinics" = "clinics_combined", "HDB" = "hdb"),
-          selected = c("hdb")
+          selected = c("clinics_combined", "hdb")
         ),
         
         selectInput(
@@ -41,6 +41,15 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           min = 1,
           max = 2,
           value = 1
+        ),
+        
+        sliderInput(
+          inputId = "initialP",
+          label = "Initial P-median set",
+          min = 0,
+          max = 10,
+          value = 1,
+          step = 1
         )
       ),
       
@@ -48,5 +57,6 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
         leafletOutput("map",height = 500)
       )
     )
-  )
+  ),
+  tabPanel("Data Table")
 )
