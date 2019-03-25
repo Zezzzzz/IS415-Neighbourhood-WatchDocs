@@ -5,6 +5,7 @@ library(spatstat)
 library(sf)
 library(tmap)
 library(tidyverse)
+library(SpatialAcc)
 
 #####################################################################
 # Singapore Planning Subzone (MP14_SUBZONE_WEB_PL)

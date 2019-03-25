@@ -14,6 +14,7 @@ library(sf)
 library(tmap)
 library(tidyverse)
 library(dplyr)
+library(SpatialAcc)
 library(leaflet)
 library(shiny)
 
@@ -36,11 +37,12 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
         ),
         
         sliderInput(
-          inputId = "power",
-          label = "SAM Power-Value",
-          min = 1,
+          inputId = "distance",
+          label = "SAM Threshold-Distance",
+          min = 0.1,
           max = 2,
-          value = 1
+          value = 0.5,
+          step = 0.1
         ),
         
         sliderInput(
