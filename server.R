@@ -27,7 +27,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  observeEvent(c(input$Type, input$subzone, input$distance), {
+  observeEvent(c(input$Type, input$subzone, input$accMethod, input$power), {
     clinic_results <- reactive({
       mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
     })
@@ -47,14 +47,14 @@ shinyServer(function(input, output, session) {
         clinics <- clinic_results() %>% mutate(`capacity` = capacity)
         
         dm <- distance(hdb_coords, clinics_coords)
-        acc_sam<- data.frame(ac(hdb_results()$No_of_Elderly_in_block,
-                                    clinics$capacity, dm, d0 = input$distance,
-                                    power = 2, family = "SAM"))
-        colnames(acc_sam) <- "accSam"
-        acc_sam <- tbl_df(acc_sam)
-        acc_sam <- lapply(acc_sam, function(x) replace(x, !is.finite(x), 0))
+        acc_val <- data.frame(ac(hdb_results()$No_of_Elderly_in_block,
+                                    clinics$capacity, dm,
+                                    power = input$power, family = input$accMethod))
+        colnames(acc_val) <- "accVal"
+        acc_val <- tbl_df(acc_val)
+        acc_val <- lapply(acc_val, function(x) replace(x, !is.finite(x), 0))
         
-        HDB_acc <- bind_cols(hdb_results(), acc_sam)
+        HDB_acc <- bind_cols(hdb_results(), acc_val)
       }
     })
     
@@ -75,18 +75,18 @@ shinyServer(function(input, output, session) {
       #                     icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
       
       if(!is.null(acc_results())) {
-        print(acc_results()$accSam)
-        pal = colorQuantile("Greens", n = 5, acc_results()$accSam)
+        print(acc_results()$accVal)
+        pal = colorQuantile("Greens", n = 5, acc_results()$accVal)
         leafletProxy("map", data = acc_results()) %>%
           clearMarkers() %>%
           addCircleMarkers(lng = ~LONG,
                            lat = ~LAT,
                            popup = paste("", acc_results()$blk_no_street, "<br><br>",
-                                         "Acc-SAM: ", acc_results()$accSam),
-                           color = ~pal(acc_results()$accSam), 
+                                         "Acc-Val: ", acc_results()$accVal),
+                           color = ~pal(acc_results()$accVal), 
                            fillOpacity = 0.8) %>%
           clearControls() %>%
-          addLegend(pal = pal, values = ~accSam, opacity = 0.8, position = "bottomright")
+          addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
       }
       
     } else if(c("clinics_combined") %in% input$Type) {

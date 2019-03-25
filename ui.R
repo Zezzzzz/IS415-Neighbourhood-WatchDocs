@@ -36,13 +36,20 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           selected = "NORTHLAND"
         ),
         
+        selectInput(
+          inputId = "accMethod", 
+          label = "Spatial Accessibility Method",
+          choices = c("SAM" = "SAM", "Hansen" = "Hansen"), 
+          selected = "SAM"
+        ),
+        
         sliderInput(
-          inputId = "distance",
-          label = "SAM Threshold-Distance",
-          min = 0.1,
+          inputId = "power",
+          label = "Power Separation",
+          min = 0.01,
           max = 2,
-          value = 0.5,
-          step = 0.1
+          value = 2,
+          step = 0.01
         ),
         
         sliderInput(
