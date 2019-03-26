@@ -244,7 +244,7 @@ head(kmeanscluster$centers)
 
 ```{r}
 cluster_centroids <- data.frame(kmeanscluster$centers)
-cluster_centroids_sf <- st_as_sf(cluster_centroids, coords = c("LONG", "LAT"))
+cluster_centroids_sf <- st_as_sf(cluster_centroids, coords = c("LONG", "LAT"), crs=4326)
 
 qtm(cluster_centroids_sf)
 ```
