@@ -163,14 +163,6 @@ mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
 ```
 
 ```{r}
-class(mpsz_clinics)
-```
-```{r}
-# st_crs(mpsz_clinics) <- st_transform(mpsz_clinics, 3414)
-# st_crs(mpsz_clinics)
-```
-
-```{r}
 #assign capacity of 2 per clinic
 clinics_combined['capacity'] <- 2
 ```
@@ -211,6 +203,10 @@ clinics_combined_filtered <- na.omit(clinics_combined_filtered)
 ```
 
 ```{r}
+
+```
+
+```{r}
 mpsz_HDB_filtered_sp <- as_Spatial(mpsz_HDB_filtered)
 clinics_combined_filtered_sp <- as_Spatial(clinics_combined_filtered)
 ```
@@ -233,4 +229,8 @@ head(optimal_loc)
 ```{r}
 optimal_loc <- mpsz_HDB_filtered_sp[optimal_loc, ]
 head(optimal_loc)
+```
+
+```{r}
+star.model1 <- star.diagram(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, alloc = model1$allocation)
 ```
