@@ -20,6 +20,7 @@ library(shiny)
 # Define server logic
 shinyServer(function(input, output, session) {
   
+  ## Logic for Interactive Map Tab ##
   output$map <- renderLeaflet({
     leaflet() %>%
       addTiles() %>% 
@@ -110,6 +111,24 @@ shinyServer(function(input, output, session) {
     } else {
       leafletProxy("map", data = NULL) %>%
         clearMarkers()
+    }
+  })
+  
+  ## Logic for Data Explorer Tab ##
+  output$viewDataTable <- renderDataTable(elderly_per_hdb)
+  
+  observeEvent(input$selectDT, {
+    if(input$selectDT == "elderly_per_hdb") {
+      elderly_per_hdb <- mpsz_HDB %>% st_set_geometry(NULL) %>% 
+        select(`blk_no_street`, `postal_code`, `SUBZONE_N`, `No_of_Elderly_in_block`)
+      
+      output$viewDataTable <- renderDataTable(elderly_per_hdb)
+      
+    } else {
+      total_clinics <- mpsz_clinics %>% st_set_geometry(NULL) %>% 
+        select(`clinic_name`, `address`, `SUBZONE_N`)
+      
+      output$viewDataTable <- renderDataTable(total_clinics)
     }
   })
 })

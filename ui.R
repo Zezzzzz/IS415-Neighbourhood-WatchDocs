@@ -67,5 +67,18 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
       )
     )
   ),
-  tabPanel("Data Table")
+  
+  tabPanel("Data Explorer",
+    fluidRow(
+      column(12,
+        selectInput("selectDT", "Select Data to View: ", 
+                    c("Number of Elderly in each HDB Block" = "elderly_per_hdb", 
+                      "Number of Clinics (GP & TCM)" = "total_clinics"), 
+                    selected = "elderly_per_hdb"
+        )
+      )
+    ),
+    hr(),
+    dataTableOutput("viewDataTable")
+  )
 )
