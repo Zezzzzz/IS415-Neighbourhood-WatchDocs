@@ -208,7 +208,7 @@ clinics_combined_filtered_sp <- as_Spatial(clinics_combined_filtered)
 ```
 
 ```{r}
-model1 <- allocations(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, p=4)
+model1 <- allocations(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, p=1)
 head(model1)
 ```
 

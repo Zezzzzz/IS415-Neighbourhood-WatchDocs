@@ -33,7 +33,7 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           inputId = "subzone", 
           label = "Select Subzone",
           choices = mpsz$SUBZONE_N, 
-          selected = "NORTHLAND"
+          selected = "ADMIRALTY"
         ),
         
         selectInput(
@@ -51,19 +51,22 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           value = 2,
           step = 0.01
         ),
-        
+
         sliderInput(
           inputId = "initialP",
           label = "Initial P-median set",
-          min = 0,
+          min = 1,
           max = 10,
           value = 1,
           step = 1
-        )
+        ),
+
+        uiOutput("interaction_slider")
       ),
       
       mainPanel(
-        leafletOutput("map",height = 500)
+        leafletOutput("map",height = 500),
+        textOutput("selected_var")
       )
     )
   ),

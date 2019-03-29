@@ -16,6 +16,7 @@ library(tidyverse)
 library(SpatialAcc)
 library(leaflet)
 library(shiny)
+library(tbart)
 
 # Define server logic
 shinyServer(function(input, output, session) {
@@ -27,8 +28,13 @@ shinyServer(function(input, output, session) {
       setView(lng = 103.8509, lat = 1.3800, zoom = 12)
   })
   
+  observeEvent(c(input$subzone),{
+    updateSliderInput(session, "initialP", value = nrow(mpsz_clinics %>% filter(SUBZONE_N == input$subzone)),
+                    min = 1, max = nrow(mpsz_clinics %>% filter(SUBZONE_N == input$subzone)),
+                    step = 1)
+  })
   
-  observeEvent(c(input$Type, input$subzone, input$accMethod, input$power), {
+  observeEvent(c(input$Type, input$subzone, input$accMethod, input$power, input$initialP), {
     clinic_results <- reactive({
       mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
     })
@@ -37,9 +43,13 @@ shinyServer(function(input, output, session) {
       mpsz_HDB %>% filter(SUBZONE_N == input$subzone)
     })
     
+    
+    
     acc_results <- reactive({
-      clinics_coords <- clinic_results() %>% st_coordinates()
-      hdb_coords <- hdb_results() %>% st_coordinates()
+      clinics_coords <- clinic_results() %>%
+        st_coordinates()
+      hdb_coords <- hdb_results() %>% 
+        st_coordinates()
        
       # check that reactive expr return value is not empty before proceeding
       if(nrow(clinics_coords) != 0 & nrow(hdb_coords) != 0) {
@@ -58,6 +68,41 @@ shinyServer(function(input, output, session) {
         HDB_acc <- bind_cols(hdb_results(), acc_val)
       }
     })
+# 
+#     clinics_of_subzone <- mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
+#     HDB_of_subzone <- mpsz_HDB %>% filter(SUBZONE_N == input$subzone)
+#     clinics_of_subzone_sp <- as_Spatial(clinics_of_subzone)
+#     HDB_of_subzone_sp <- as_Spatial(HDB_of_subzone)
+
+    # output$interaction_slider <- renderUI(
+    #   sliderInput(
+    #     inputId = "testp",
+    #     label = "Power Separation",
+    #     min   = 1,
+    #     max   = nrow(mpsz_clinics %>% filter(SUBZONE_N == input$subzone)),
+    #     value = nrow(mpsz_clinics %>% filter(SUBZONE_N == input$subzone)),
+    #     step = 1
+    #     )
+    # )
+    
+    
+    
+    pMed_results <- reactive({
+      clinics_of_subzone <- mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
+      HDB_of_subzone <- mpsz_HDB %>% filter(SUBZONE_N == input$subzone)
+      if(nrow(clinics_of_subzone) != 0 & nrow(HDB_of_subzone) != 0){
+        clinics_of_subzone_sp <- as_Spatial(clinics_of_subzone)
+        HDB_of_subzone_sp <- as_Spatial(HDB_of_subzone)
+        allocation <- allocations(HDB_of_subzone_sp, clinics_of_subzone_sp, p=input$initialP)
+      }
+    })
+    
+    
+    
+    output$selected_var <- renderPrint({ 
+      pMed_results()
+    })
+
     
     if(all(c("clinics_combined", "hdb") %in% input$Type)) {
       # leafletProxy("map", data = clinic_results()) %>%
@@ -75,19 +120,35 @@ shinyServer(function(input, output, session) {
       #                                   "Elderly Population: ", hdb_results()$No_of_Elderly_in_block),
       #                     icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
       
-      if(!is.null(acc_results())) {
-        print(acc_results()$accVal)
-        pal = colorQuantile("Greens", n = 5, acc_results()$accVal)
-        leafletProxy("map", data = acc_results()) %>%
+      
+      # if(!is.null(acc_results())) {
+      #   print(acc_results()$accVal)
+      #   pal = colorQuantile("Greens", n = 5, acc_results()$accVal)
+      #   leafletProxy("map", data = acc_results()) %>%
+      #     clearMarkers() %>%
+      #     addCircleMarkers(lng = ~LONG,
+      #                      lat = ~LAT,
+      #                      popup = paste("", acc_results()$blk_no_street, "<br><br>",
+      #                                    "Acc-Val: ", acc_results()$accVal),
+      #                      color = ~pal(acc_results()$accVal), 
+      #                      fillOpacity = 0.8) %>%
+      #     clearControls() %>%
+      #     addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
+      # }
+      
+      if(!is.null(pMed_results())) {
+        #print(pMed_results()$allocdist)
+        pal = colorQuantile("Blues", n = 5, pMed_results()$allocdist)
+        leafletProxy("map", data = pMed_results()) %>%
           clearMarkers() %>%
           addCircleMarkers(lng = ~LONG,
                            lat = ~LAT,
-                           popup = paste("", acc_results()$blk_no_street, "<br><br>",
-                                         "Acc-Val: ", acc_results()$accVal),
-                           color = ~pal(acc_results()$accVal), 
+                           popup = paste("", pMed_results()$blk_no_street, "<br><br>",
+                                         "Allocation-Dist: ", pMed_results()$allocdist),
+                           color = ~pal(pMed_results()$allocdist), 
                            fillOpacity = 0.8) %>%
           clearControls() %>%
-          addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
+          addLegend(pal = pal, values = ~allocdist, opacity = 0.8, position = "bottomright")
       }
       
     } else if(c("clinics_combined") %in% input$Type) {
