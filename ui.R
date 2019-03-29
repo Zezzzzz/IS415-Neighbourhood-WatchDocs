@@ -22,44 +22,57 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
   tabPanel("Interactive Map", 
     sidebarLayout(
       sidebarPanel(
+        radioButtons(
+          inputId = "analysisType", 
+          label = "Select Analysis Type",
+          choices = c("Geographical Accessibility" = "geoAcc", "Optimal Allocation Analysis" = "pMed")
+          ),
+        
         checkboxGroupInput(
           inputId = "Type", 
           label = "Select Type",
           choices = c("Clinics" = "clinics_combined", "HDB" = "hdb"),
           selected = c("clinics_combined", "hdb")
-        ),
+          ),
         
         selectInput(
           inputId = "subzone", 
           label = "Select Subzone",
           choices = mpsz$SUBZONE_N, 
           selected = "ADMIRALTY"
+          ),
+        
+        conditionalPanel(
+          condition = "input.analysisType == 'geoAcc'",
+          selectInput(
+            inputId = "accMethod", 
+            label = "Spatial Accessibility Method",
+            choices = c("SAM" = "SAM", "Hansen" = "Hansen"), 
+            selected = "SAM"
+            ),
+          
+          sliderInput(
+            inputId = "power",
+            label = "Power Separation",
+            min = 0.01,
+            max = 2,
+            value = 2,
+            step = 0.01
+            )
+          
         ),
         
-        selectInput(
-          inputId = "accMethod", 
-          label = "Spatial Accessibility Method",
-          choices = c("SAM" = "SAM", "Hansen" = "Hansen"), 
-          selected = "SAM"
-        ),
-        
-        sliderInput(
-          inputId = "power",
-          label = "Power Separation",
-          min = 0.01,
-          max = 2,
-          value = 2,
-          step = 0.01
-        ),
-
-        sliderInput(
-          inputId = "initialP",
-          label = "Initial P-median set",
-          min = 1,
-          max = 10,
-          value = 1,
-          step = 1
-        ),
+        conditionalPanel(
+          condition = "input.analysisType == 'pMed'",
+          sliderInput(
+            inputId = "initialP",
+            label = "Initial P-median set",
+            min = 1,
+            max = 10,
+            value = 1,
+            step = 1
+            )
+          ),
 
         uiOutput("interaction_slider")
       ),

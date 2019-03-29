@@ -34,7 +34,21 @@ shinyServer(function(input, output, session) {
                     step = 1)
   })
   
-  observeEvent(c(input$Type, input$subzone, input$accMethod, input$power, input$initialP), {
+  observeEvent(input$map_click, {
+    click <- input$map_click
+    text<-paste("Latitude ", round(click$lat,2), "Longtitude ", round(click$lng,2))
+    
+    proxy <- leafletProxy("map")
+    
+    ## This displays the pin drop circle
+    proxy %>% 
+      clearPopups() %>%
+      clearMarkers(layerId=input$map_click) %>%
+      #addPopups(click$lng, click$lat) %>%
+      addCircles(click$lng, click$lat, radius=100, color="red")
+  })
+  
+  observeEvent(c(input$Type, input$subzone, input$accMethod, input$power, input$initialP, input$analysisType), {
     clinic_results <- reactive({
       mpsz_clinics %>% filter(SUBZONE_N == input$subzone)
     })
@@ -120,23 +134,23 @@ shinyServer(function(input, output, session) {
       #                                   "Elderly Population: ", hdb_results()$No_of_Elderly_in_block),
       #                     icon = makeAwesomeIcon(icon = "icon", markerColor = "orange"))
       
+
+      if(!is.null(acc_results()) & input$analysisType == 'geoAcc') {
+        print(acc_results()$accVal)
+        pal = colorQuantile("Greens", n = 5, acc_results()$accVal)
+        leafletProxy("map", data = acc_results()) %>%
+          clearMarkers() %>%
+          addCircleMarkers(lng = ~LONG,
+                           lat = ~LAT,
+                           popup = paste("", acc_results()$blk_no_street, "<br><br>",
+                                         "Acc-Val: ", acc_results()$accVal),
+                           color = ~pal(acc_results()$accVal),
+                           fillOpacity = 0.8) %>%
+          clearControls() %>%
+          addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
+      }
       
-      # if(!is.null(acc_results())) {
-      #   print(acc_results()$accVal)
-      #   pal = colorQuantile("Greens", n = 5, acc_results()$accVal)
-      #   leafletProxy("map", data = acc_results()) %>%
-      #     clearMarkers() %>%
-      #     addCircleMarkers(lng = ~LONG,
-      #                      lat = ~LAT,
-      #                      popup = paste("", acc_results()$blk_no_street, "<br><br>",
-      #                                    "Acc-Val: ", acc_results()$accVal),
-      #                      color = ~pal(acc_results()$accVal), 
-      #                      fillOpacity = 0.8) %>%
-      #     clearControls() %>%
-      #     addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
-      # }
-      
-      if(!is.null(pMed_results())) {
+      else if(!is.null(pMed_results()) & input$analysisType == 'pMed') {
         #print(pMed_results()$allocdist)
         pal = colorQuantile("Blues", n = 5, pMed_results()$allocdist)
         leafletProxy("map", data = pMed_results()) %>%
