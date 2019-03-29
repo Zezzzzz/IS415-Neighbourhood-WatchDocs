@@ -230,21 +230,3 @@ head(optimal_loc)
 ```{r}
 star.model1 <- star.diagram(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, alloc = model1$allocation)
 ```
-
-```{r}
-#k-means clustering to find out the optimal points to create new clinics
-mpsz_HDB_filteredcols <- mpsz_HDB_filtered[, c("LONG","LAT")]
-
-mpsz_HDB_filteredmatrix <- st_set_geometry(mpsz_HDB_filteredcols, NULL)
-
-kmeanscluster <- cclust(as.matrix(mpsz_HDB_filteredmatrix), 3, method="kmeans") # k is 3
-
-head(kmeanscluster$centers)
-```
-
-```{r}
-cluster_centroids <- data.frame(kmeanscluster$centers)
-cluster_centroids_sf <- st_as_sf(cluster_centroids, coords = c("LONG", "LAT"), crs=4326)
-
-qtm(cluster_centroids_sf)
-```
