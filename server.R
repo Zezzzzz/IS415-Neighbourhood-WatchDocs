@@ -23,8 +23,6 @@ library(proj4)
 # Define server logic
 shinyServer(function(input, output, session) {
   
-  sum_dist_df <- data.frame()
-
   ## Logic for Interactive Map Tab ##
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -118,11 +116,13 @@ shinyServer(function(input, output, session) {
               newRow_df <- data.frame(LAT=click$lat,
                                       LONG = click$lng,
                                       SUM_DIST = sum(allocation$allocdist))
-              print(sum_dist_df)
-              sum_dist_df <- rbind(sum_dist_df,newRow_df)
               
               
-              output$viewDataTable2 <- renderDataTable(rbind(sum_dist_df,newRow_df))
+              sum_dist_df2 <<- rbind(sum_dist_df2, newRow_df)
+              print(sum_dist_df2)
+              
+              
+              output$viewDataTable2 <- renderDataTable(sum_dist_df2)
               
               allocation
             }

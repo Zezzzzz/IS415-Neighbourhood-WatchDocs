@@ -126,3 +126,7 @@ mpsz_HDB$No_of_Elderly_in_block_5 <- ifelse(mpsz_HDB$`5room_exec_total` == 0, 0,
 mpsz_HDB$No_of_Elderly_in_block <- mpsz_HDB$No_of_Elderly_in_block_1_2 + mpsz_HDB$No_of_Elderly_in_block_3 + mpsz_HDB$No_of_Elderly_in_block_4 + mpsz_HDB$No_of_Elderly_in_block_5
 
 mpsz_HDB$No_of_Elderly_in_block <- round(mpsz_HDB$No_of_Elderly_in_block)
+
+sum_dist_df2 <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("LAT","LONG","SUM_DIST")
+colnames(sum_dist_df2) <- x
