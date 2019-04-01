@@ -263,7 +263,9 @@ shinyServer(function(input, output, session) {
       #print(clicked)
 
       if(!is.null(acc_results()) & input$analysisType == 'geoAcc') {
-        #print(acc_results()$accVal)
+        sum_dist_df2 <<- data.frame(matrix(ncol = 3, nrow = 0))
+        x <<- c("LAT","LONG","SUM_DIST")
+        colnames(sum_dist_df2) <<- x
         pal = colorQuantile("Purples", n = 5, acc_results()$accVal)
         leafletProxy("map", data = acc_results()) %>%
           clearShapes()%>%
