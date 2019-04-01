@@ -23,6 +23,8 @@ library(proj4)
 # Define server logic
 shinyServer(function(input, output, session) {
   
+  sum_dist_df <- data.frame()
+
   ## Logic for Interactive Map Tab ##
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -53,8 +55,6 @@ shinyServer(function(input, output, session) {
     })
   })
   
-
-
   observeEvent(c(input$map_click, input$subzone, input$initialP, input$analysisType,input$Type), {
     
     if(all(c("clinics_combined", "hdb") %in% input$Type)) {
@@ -114,7 +114,19 @@ shinyServer(function(input, output, session) {
               clinics_of_subzone_sp <- as_Spatial(clinics_of_subzone)
               HDB_of_subzone_sp <- as_Spatial(HDB_of_subzone)
               allocation <- allocations(HDB_of_subzone_sp, clinics_of_subzone_sp, p=input$initialP + 1)
+              
+              newRow_df <- data.frame(LAT=click$lat,
+                                      LONG = click$lng,
+                                      SUM_DIST = sum(allocation$allocdist))
+              print(sum_dist_df)
+              sum_dist_df <- rbind(sum_dist_df,newRow_df)
+              
+              
+              output$viewDataTable2 <- renderDataTable(rbind(sum_dist_df,newRow_df))
+              
+              allocation
             }
+            
           })
           
           
@@ -133,6 +145,8 @@ shinyServer(function(input, output, session) {
                                fillOpacity = 0.8) %>%
               clearControls() %>%
               addLegend(pal = pal, values = ~allocdist, opacity = 0.8, position = "bottomright")
+            
+            
           }
         }
       }
@@ -328,6 +342,7 @@ shinyServer(function(input, output, session) {
   
   ## Logic for Data Explorer Tab ##
   output$viewDataTable <- renderDataTable(elderly_per_hdb)
+  
   
   observeEvent(input$selectDT, {
     if(input$selectDT == "elderly_per_hdb") {

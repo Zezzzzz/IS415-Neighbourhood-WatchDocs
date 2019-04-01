@@ -79,7 +79,8 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
       
       mainPanel(
         leafletOutput("map",height = 500),
-        textOutput("selected_var")
+        textOutput("selected_var"),
+        dataTableOutput("viewDataTable2")
       )
     )
   ),
