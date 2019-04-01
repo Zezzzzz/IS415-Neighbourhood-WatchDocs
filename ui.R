@@ -81,7 +81,10 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
       mainPanel(
         leafletOutput("map",height = 500),
         textOutput("selected_var"),
-        dataTableOutput("viewDataTable2")
+        conditionalPanel(
+          condition = "input.analysisType == 'pMed'",
+          dataTableOutput("viewDataTable2")
+        )
       )
     )
   ),
