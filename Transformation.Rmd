@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r echo=TRUE, eval=TRUE, message= FALSE}
-packages = c('rgdal', 'maptools', 'raster','spatstat', 'tmap', 'sf', 'tidyverse', 'SpatialAcc', 'tbart', 'cclust', 'rgeos', 'proj4', 'pracma') 
+packages = c('rgdal', 'maptools', 'raster','spatstat', 'tmap', 'sf', 'tidyverse', 'SpatialAcc', 'tbart', 'cclust', 'rgeos', 'proj4', 'pracma', 'compareDF') 
 for (p in packages){ 
   if(!require(p, character.only = T)){ 
     install.packages(p) } 
@@ -216,8 +216,8 @@ tmap_mode("view")
 ```
 
 ```{r}
-mpsz_HDB_filtered <- mpsz_HDB[mpsz_HDB$SUBZONE_N=="ADMIRALTY", ]
-clinics_combined_filtered <- clinics_combined[clinics_combined$SUBZONE_N=="ADMIRALTY", ]
+mpsz_HDB_filtered <- mpsz_HDB[mpsz_HDB$SUBZONE_N=="NORTHLAND", ]
+clinics_combined_filtered <- clinics_combined[clinics_combined$SUBZONE_N=="NORTHLAND", ]
 clinics_combined_filtered <- na.omit(clinics_combined_filtered)
 ```
 
@@ -236,7 +236,7 @@ for(i in 1:nrow(mpsz_HDB_filtered)){
   n <- mpsz_HDB_filtered$No_of_Elderly_in_block[i]
   lat <- mpsz_HDB_filtered$LAT[i]
   long <- mpsz_HDB_filtered$LONG[i]
-  radiusLat = 0.0002
+  radiusLat = 0.0001
   radiusLong = 0.0001
   angle = 2*pi*rand(n,1)
   rLat = radiusLat*sqrt(rand(n,1))
@@ -253,8 +253,6 @@ for(i in 1:nrow(mpsz_HDB_filtered)){
                               SUBZONE_N = mpsz_HDB_filtered$SUBZONE_N[i])
     mpsz_HDB_split <- rbind(mpsz_HDB_split, newRow_df)
   }
-
-  
 }
 
 mpsz_HDB_split_sf <- st_as_sf(mpsz_HDB_split, coords = c("LONG1","LAT1"),
@@ -292,6 +290,7 @@ subzone_clinics <- st_as_sf(clinics_combined_filtered_sp, coords = c("LAT", "LON
 alloc_results <- alloc_results[order(alloc_results$allocation, alloc_results$allocdist),]
 
 # create empty data frame with header columns
+total_allocated_elderly <- alloc_results[0,]
 total_unallocated_elderly <- alloc_results[0,]
 
 ### FIRST RUN OF ALLOCATION ALGORITHM ###
@@ -301,26 +300,101 @@ for(i in 1:nrow(subzone_clinics)) {
   # get the total elderlys allocated to this allocation ID
   clinic_n_allocation <- alloc_results[which(alloc_results$allocation == i), ]
   
-  if(nrow(clinic_n_allocation) > capacity) {
+  if(nrow(clinic_n_allocation) >= capacity) {
     # capacity for this clinic is maxed out
     subzone_clinics$capacity[i] = 0
+    
+    # get the allocated elderlys, append to total allocated elderlys
+    allocated_elderly <- clinic_n_allocation %>% slice(1:capacity)
+    total_allocated_elderly <- rbind(total_allocated_elderly, allocated_elderly)
     
     # get the remaining unallocated elderlys, append to total unallocated elderlys
     unallocated_elderly <- clinic_n_allocation %>% slice(capacity+1:nrow(clinic_n_allocation))
     total_unallocated_elderly <- rbind(total_unallocated_elderly, unallocated_elderly)
     
   } else if(nrow(clinic_n_allocation) < capacity) {
+    # get the allocated elderlys, append to total allocated elderlys
+    allocated_elderly <- clinic_n_allocation %>% slice(1:capacity)
+    total_allocated_elderly <- rbind(total_allocated_elderly, allocated_elderly)
+    
     # calculate the remaining capacity
     subzone_clinics$capacity[i] = capacity - nrow(clinic_n_allocation)
     
-  } else {
-    # capacity for this clinic is maxed out
-    subzone_clinics$capacity[i] = 0
   }
 }
+```
 
-qtm(alloc_results)
+```{r}
+### CONTINUOUS ALLOCATION ALGORITHM ###
+
+while(nrow(subzone_clinics[which(subzone_clinics$capacity > 0), ]) > 0 & nrow(total_unallocated_elderly) > 0) {
+  no_of_clinics <- nrow(subzone_clinics[which(subzone_clinics$capacity > 0), ])
+  clinics_remaining <- subzone_clinics[which(subzone_clinics$capacity > 0), ]
+
+  total_unallocated_elderly <- total_unallocated_elderly %>%
+    select("blk_no_street","LAT","LONG","SUBZONE_N")
+  
+  # convert both data.frames to SpatialPointsDataFrame
+  clinics_remaining_sp <- as_Spatial(clinics_remaining)
+  total_unallocated_elderly_sp <- as_Spatial(total_unallocated_elderly)
+
+  # run ALLOCATION algorithm again
+  alloc_results <- allocations(total_unallocated_elderly_sp,
+                               clinics_remaining_sp, p=no_of_clinics)
+
+  alloc_results <- st_as_sf(alloc_results, coords = c("LAT", "LONG"), crs = st_crs(mpsz))
+  alloc_results <- alloc_results[order(alloc_results$allocation, alloc_results$allocdist),]
+
+  # create empty data frame with header columns
+  total_unallocated_elderly <- alloc_results[0,]
+
+  for(i in 1:nrow(clinics_remaining)) {
+    clinic_row <- clinics_remaining[i,]
+
+    # get the total elderlys allocated to this allocation ID
+    clinic_n_allocation <- alloc_results[which(alloc_results$allocation == i), ]
+
+    clinic_capacity <- subzone_clinics$capacity[subzone_clinics$clinic_name == clinic_row$clinic_name]
+
+    if(nrow(clinic_n_allocation) >= clinic_capacity) {
+      subzone_clinics$capacity[subzone_clinics$clinic_name == clinic_row$clinic_name] = 0
+      
+      # get the allocated elderlys, append to total allocated elderlys
+      allocated_elderly <- clinic_n_allocation %>% slice(1:capacity)
+      total_allocated_elderly <- rbind(total_allocated_elderly, allocated_elderly)
+
+      # get the unallocated elderlys, append to total unallocated elderlys
+      unallocated_elderly <- clinic_n_allocation %>% slice(clinic_capacity+1:nrow(clinic_n_allocation))
+      total_unallocated_elderly <- rbind(total_unallocated_elderly, unallocated_elderly)
+
+    } else if(nrow(clinic_n_allocation) < clinic_capacity) {
+      # get the allocated elderlys, append to total allocated elderlys
+      allocated_elderly <- clinic_n_allocation %>% slice(1:capacity)
+      total_allocated_elderly <- rbind(total_allocated_elderly, allocated_elderly)
+      
+      # calculate the remaining capacity
+      subzone_clinics$capacity[subzone_clinics$clinic_name == clinic_row$clinic_name] = clinic_capacity - nrow(clinic_n_allocation)
+    }
+  }
+}
+```
+
+```{r}
+df1 <- total_unallocated_elderly %>%
+    select("blk_no_street","LAT","LONG","SUBZONE_N") %>% st_set_geometry(NULL)
+
+df2 <- mpsz_HDB_split_sf %>% st_set_geometry(NULL)
+
+total_allocated_elderly <- anti_join(df2, df1)
+total_allocated_elderly$LONG1 <- total_allocated_elderly$LONG
+total_allocated_elderly$LAT1 <- total_allocated_elderly$LAT
+
+total_allocated_elderly <- st_as_sf(total_allocated_elderly, coords = c("LONG1","LAT1"),
+                                         crs = 4326)
+
+qtm(total_allocated_elderly)
 qtm(total_unallocated_elderly)
+#cat("Iteration = ", i, ", Rows = ", nrow(clinic_n_allocation), "\n")
 ```
 
 ```{r}
@@ -360,5 +434,5 @@ head(optimal_loc)
 ```
 
 ```{r}
-star.model1 <- star.diagram(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, alloc = model1$allocation)
+star.model1 <- star.diagram(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, alloc = alloc_results$allocation)
 ```
