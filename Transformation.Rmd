@@ -277,40 +277,79 @@ clinics_combined_filtered_sp <- as_Spatial(clinics_combined_filtered)
 ```
 
 ```{r}
-model1 <- allocations(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, p=4)
+alloc_results <- allocations(mpsz_HDB_filtered_sp, clinics_combined_filtered_sp, p=nrow(clinics_combined_filtered))
 
-model1 <- st_as_sf(model1, coords = c("LAT", "LONG"), crs = st_crs(mpsz))
+alloc_results <- st_as_sf(alloc_results, coords = c("LAT", "LONG"), crs = st_crs(mpsz))
 
-
-#qtm(model1)
+#qtm(alloc_results)
 ```
 
 ```{r}
-alloc1 <- model1[which(model1$allocation == 1), ]
+capacity <- 160
 
-alloc1 <- alloc1[order(alloc1$allocdist),]
+subzone_clinics <- st_as_sf(clinics_combined_filtered_sp, coords = c("LAT", "LONG"), crs = st_crs(mpsz)) %>% mutate(capacity = capacity)
 
-remainder <- data.frame()
+alloc_results <- alloc_results[order(alloc_results$allocation, alloc_results$allocdist),]
 
-if(nrow(alloc1) > 160){
-  toAdd <- alloc1 %>% slice(161:nrow(alloc1))
-  remainder <- rbind(remainder, toAdd)
+# create empty data frame with header columns
+total_unallocated_elderly <- alloc_results[0,]
+
+### FIRST RUN OF ALLOCATION ALGORITHM ###
+for(i in 1:nrow(subzone_clinics)) {
+  clinic_row <- subzone_clinics[i,]
+  
+  # get the total elderlys allocated to this allocation ID
+  clinic_n_allocation <- alloc_results[which(alloc_results$allocation == i), ]
+  
+  if(nrow(clinic_n_allocation) > capacity) {
+    # capacity for this clinic is maxed out
+    subzone_clinics$capacity[i] = 0
+    
+    # get the remaining unallocated elderlys, append to total unallocated elderlys
+    unallocated_elderly <- clinic_n_allocation %>% slice(capacity+1:nrow(clinic_n_allocation))
+    total_unallocated_elderly <- rbind(total_unallocated_elderly, unallocated_elderly)
+    
+  } else if(nrow(clinic_n_allocation) < capacity) {
+    # calculate the remaining capacity
+    subzone_clinics$capacity[i] = capacity - nrow(clinic_n_allocation)
+    
+  } else {
+    # capacity for this clinic is maxed out
+    subzone_clinics$capacity[i] = 0
+  }
 }
 
-class(remainder)
+qtm(alloc_results)
+qtm(total_unallocated_elderly)
+```
 
-remainder <- st_as_sf(remainder)
-  
-remainder <- remainder %>% select(blk_no_street, LAT, LONG, SUBZONE_N)
+```{r}
+# alloc1 <- alloc_results[which(alloc_results$allocation == 1), ]
+# 
+# alloc1 <- alloc1[order(alloc1$allocdist),]
+# 
+# remainder <- data.frame()
+# 
+# # Assumption: Each clinic has 2 doctor, each doctor takes 80 patients per month
+# if(nrow(alloc1) > 160){
+#   toAdd <- alloc1 %>% slice(161:nrow(alloc1))
+#   remainder <- rbind(remainder, toAdd)
+# }
+# 
+# class(remainder)
+# 
+# remainder <- st_as_sf(remainder)
+#   
+# remainder <- remainder %>% select(blk_no_street, LAT, LONG, SUBZONE_N)
 
 ```
 
 ```{r}
-sum(model1$allocdist)
+sum(alloc_results$allocdist)
 ```
 
 ```{r}
-optimal_loc <- unique(model1$allocation)
+optimal_loc <- unique(alloc_results$allocation)
 optimal_loc <- clinics_combined_filtered_sp[optimal_loc, ]
 head(optimal_loc)
 ```
