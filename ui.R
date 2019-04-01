@@ -17,6 +17,7 @@ library(dplyr)
 library(SpatialAcc)
 library(leaflet)
 library(shiny)
+library(rsconnect)
 
 navbarPage("NeighbourhoodWatchDocs", id="nav",
   tabPanel("Interactive Map", 

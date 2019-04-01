@@ -6,6 +6,7 @@ library(sf)
 library(tmap)
 library(tidyverse)
 library(SpatialAcc)
+library(rsconnect)
 
 #####################################################################
 # Singapore Planning Subzone (MP14_SUBZONE_WEB_PL)

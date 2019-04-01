@@ -19,6 +19,7 @@ library(shiny)
 library(tbart)
 library(rgeos)
 library(proj4)
+library(rsconnect)
 
 # Define server logic
 shinyServer(function(input, output, session) {

@@ -1,0 +1,13 @@
+name: IS415-Neighbourhood-WatchDocs
+title: IS415-Neighbourhood-WatchDocs
+username:
+account: neighbourhoodwatchdocs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 828465
+bundleId: 1977755
+url: https://neighbourhoodwatchdocs.shinyapps.io/IS415-Neighbourhood-WatchDocs/
+when: 1554086653.27607
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .gitattributes|Transformation.knit.md|Transformation.nb.html
