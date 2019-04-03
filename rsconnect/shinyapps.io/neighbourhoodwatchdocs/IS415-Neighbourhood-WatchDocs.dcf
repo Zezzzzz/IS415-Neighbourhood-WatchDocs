@@ -5,9 +5,9 @@ account: neighbourhoodwatchdocs
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 828465
-bundleId: 1977755
+bundleId: 1982462
 url: https://neighbourhoodwatchdocs.shinyapps.io/IS415-Neighbourhood-WatchDocs/
-when: 1554086653.27607
+when: 1554236191.36048
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .gitattributes|Transformation.knit.md|Transformation.nb.html
+ignoredFiles: .gitattributes|Transformation.nb.html

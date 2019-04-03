@@ -6,15 +6,7 @@
 # 
 #    http://shiny.rstudio.com/
 #
-library(rgdal) 
-library(maptools) 
-library(raster) 
-library(spatstat)
-library(sf)
-library(tmap)
-library(tidyverse)
-library(dplyr)
-library(SpatialAcc)
+
 library(leaflet)
 library(shiny)
 library(rsconnect)
@@ -26,7 +18,7 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
         radioButtons(
           inputId = "analysisType", 
           label = "Select Analysis Type",
-          choices = c("Geographical Accessibility" = "geoAcc", "Optimal Allocation Analysis" = "pMed")
+          choices = c("Geographical Accessibility" = "geoAcc", "Clinic Allocation Analysis" = "allocation")
           ),
         
         checkboxGroupInput(
@@ -39,7 +31,7 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
         selectInput(
           inputId = "subzone", 
           label = "Select Subzone",
-          choices = mpsz$SUBZONE_N, 
+          choices = subzone_list$subzone, 
           selected = "ADMIRALTY"
           ),
         
@@ -50,28 +42,28 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
             label = "Spatial Accessibility Method",
             choices = c("SAM" = "SAM", "Hansen" = "Hansen"), 
             selected = "SAM"
-            ),
-          
-          sliderInput(
-            inputId = "power",
-            label = "Power Separation",
-            min = 0.01,
-            max = 2,
-            value = 2,
-            step = 0.01
             )
-          
+          # conditionalPanel(
+          #   condition = "input.accMethod == 'Hansen'",
+          #   sliderInput(
+          #     inputId = "power",
+          #     label = "Power Separation",
+          #     min = 1,
+          #     max = 2,
+          #     value = 2,
+          #     step = 0.1
+          #   )
+          # )
         ),
         
         conditionalPanel(
-          condition = "input.analysisType == 'pMed'",
-          sliderInput(
-            inputId = "initialP",
-            label = "Initial P-median set",
-            min = 1,
-            max = 10,
-            value = 1,
-            step = 1
+          condition = "input.analysisType == 'allocation'",
+          numericInput(
+            inputId = "cCapacity",
+            label = "Clinic Capacity",
+            min = 80,
+            max = 160,
+            value = 80
             )
           ),
 
@@ -82,8 +74,21 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
         leafletOutput("map",height = 500),
         textOutput("selected_var"),
         conditionalPanel(
-          condition = "input.analysisType == 'pMed'",
-          dataTableOutput("viewDataTable2")
+          condition = "input.analysisType == 'allocation'",
+          hr(),
+          htmlOutput("total_elderly_in_subzone"),
+          hr(),
+          htmlOutput("total_elderly_allocated"),
+          hr(),
+          htmlOutput("total_elderly_unallocated"),
+          hr(),
+          htmlOutput("total_alloc_dist"),
+          hr(),
+          h3("Allocated Blocks & Elderly"),
+          dataTableOutput("allocated_elderly_output"),
+          hr(),
+          h3("Unallocated Blocks & Elderly"),
+          dataTableOutput("unallocated_elderly_output")
         )
       )
     )
