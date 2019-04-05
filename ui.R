@@ -84,11 +84,8 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
           hr(),
           htmlOutput("total_alloc_dist"),
           hr(),
-          h3("Allocated Blocks & Elderly"),
-          dataTableOutput("allocated_elderly_output"),
-          hr(),
-          h3("Unallocated Blocks & Elderly"),
-          dataTableOutput("unallocated_elderly_output")
+          h3("Allocation Result (Blocks & Elderly Count)"),
+          dataTableOutput("allocation_result_output")
         )
       )
     )

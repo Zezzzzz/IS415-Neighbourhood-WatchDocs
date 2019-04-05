@@ -35,6 +35,8 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(c(input$subzone),{
+    # set new clinic location to NULL due to Subzone change
+    new_clinic_location <<- NULL
     
     # retrieve all the clinic and elderly points in each HDB of the Subzone
     getClinicAndElderlyPointsInSubzone(input$subzone)
@@ -53,8 +55,30 @@ shinyServer(function(input, output, session) {
     output$map <- renderLeaflet({
       leaflet() %>%
         addTiles() %>% 
+        clearShapes() %>%
         setView(lng = latlon$lon, lat = latlon$lat, zoom = 16)
     })
+  })
+  
+  observeEvent(c(input$map_click), {
+    if(!is.null(new_clinic_location)) {
+      new_clinic_location <<- NULL
+      
+      leafletProxy("map") %>%
+        clearControls() %>%
+        clearShapes()
+      
+    } else {
+      if(input$analysisType == 'allocation') {
+        new_clinic_location <<- input$map_click
+        
+        leafletProxy("map") %>%
+          clearControls() %>%
+          clearShapes() %>%
+          addCircles(new_clinic_location$lng, new_clinic_location$lat, 
+                     radius=18, color="black", fillColor = "purple")
+      }
+    }
   })
   
   observeEvent(c(input$map_click, input$Type, input$subzone, input$accMethod, 
@@ -125,16 +149,6 @@ shinyServer(function(input, output, session) {
           #addLegend(pal = pal, values = ~accVal, opacity = 0.8, position = "bottomright")
         
       } else if(input$analysisType == 'allocation') {
-        new_clinic_location <<- input$map_click
-
-        ## This displays the pin drop circle
-        if(!is.null(new_clinic_location)) {
-          leafletProxy("map") %>%
-            clearControls() %>%
-            clearShapes() %>%
-            addCircles(new_clinic_location$lng, new_clinic_location$lat, 
-                       radius=15, color="black", fillColor = "blue")
-        }
         
         allocateElderly(input$subzone, input$cCapacity, new_clinic_location)
 
@@ -154,20 +168,27 @@ shinyServer(function(input, output, session) {
         total_unallocated_elderly <<- total_unallocated_elderly %>% mutate(freq = 1)
         
         if(nrow(total_allocated_elderly) > 0) {
-         allocated_aggregated <<- aggregate(total_allocated_elderly$freq, 
-                                           by=list(blk_no_street=total_allocated_elderly$blk_no_street), 
-                                           FUN=sum) %>% rename(no_of_elderly_allocated = x)
-         output$allocated_elderly_output <- renderDataTable(allocated_aggregated)
+          allocated_aggregated <<- aggregate(total_allocated_elderly$freq, 
+                                             by=list(blk_no_street=total_allocated_elderly$blk_no_street), 
+                                             FUN=sum) %>% rename(no_of_elderly_allocated = x)
+        } else {
+          allocated_aggregated$no_of_elderly_allocated <<- 0
         }
         
         if(nrow(total_unallocated_elderly) > 0) {
-         unallocated_aggregated <<- aggregate(total_unallocated_elderly$freq, 
-                                             by=list(blk_no_street=total_unallocated_elderly$blk_no_street), 
-                                             FUN=sum) %>% rename(no_of_elderly_unallocated = x)
-         output$unallocated_elderly_output <- renderDataTable(unallocated_aggregated) 
+          unallocated_aggregated <<- aggregate(total_unallocated_elderly$freq, 
+                                               by=list(blk_no_street=total_unallocated_elderly$blk_no_street), 
+                                               FUN=sum) %>% rename(no_of_elderly_unallocated = x)
+        } else {
+          unallocated_aggregated$no_of_elderly_unallocated <<- 0
         }
         
         colorOnHDB(unallocated_aggregated, allocated_aggregated)
+        
+        allocation_result <<- full_join(allocated_aggregated, unallocated_aggregated, by = "blk_no_street")
+        allocation_result[is.na(allocation_result)] <<- 0
+        allocation_result <<- allocation_result[order(allocation_result$blk_no_street),]
+        output$allocation_result_output <- renderDataTable(allocation_result)
         
         leafletProxy("map", data = final_results) %>%
          clearControls() %>%
@@ -208,7 +229,7 @@ shinyServer(function(input, output, session) {
     } else {
       leafletProxy("map", data = NULL) %>%
         clearControls() %>%
-        clearShapes()%>%
+        clearShapes() %>%
         clearMarkers()
     }
   
