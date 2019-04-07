@@ -11,7 +11,8 @@ library(leaflet)
 library(shiny)
 library(rsconnect)
 
-navbarPage(a("NeighbourhoodWatchDocs", href="https://wiki.smu.edu.sg/1819t2is415/NeighbourhoodWatchDocs"), id="nav",
+navbarPage(a("NeighbourhoodWatchDocs", href="https://wiki.smu.edu.sg/1819t2is415/NeighbourhoodWatchDocs"), 
+           id="nav", windowTitle = "NeighbourhoodWatchDocs",
            
   tabPanel("Interactive Map", 
     sidebarLayout(
