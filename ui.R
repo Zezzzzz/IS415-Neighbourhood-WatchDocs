@@ -11,7 +11,8 @@ library(leaflet)
 library(shiny)
 library(rsconnect)
 
-navbarPage("NeighbourhoodWatchDocs", id="nav",
+navbarPage(a("NeighbourhoodWatchDocs", href="https://wiki.smu.edu.sg/1819t2is415/NeighbourhoodWatchDocs"), id="nav",
+           
   tabPanel("Interactive Map", 
     sidebarLayout(
       sidebarPanel(
@@ -103,5 +104,25 @@ navbarPage("NeighbourhoodWatchDocs", id="nav",
     ),
     hr(),
     dataTableOutput("viewDataTable")
+  ), 
+  
+  tabPanel("Project Information & Instruction Manual",
+           h1("Computationally Allocate Resources from Clinics to Households in Mature Estates"),
+           h2("By Neighbourhood WatchDocs:", a("Debbie Lee", href="https://www.linkedin.com/in/debbieleeshanying/"), ",", a("Chun Ming", href="https://www.linkedin.com/in/cmgoh/"), ",", a("Guan Ze", href="https://www.linkedin.com/in/guan-ze-tan/"), "| Supervised by Prof Kam Tin Seong"), 
+           fluidRow(
+             column(6,
+                    div("With the Singapore's aging population increasing, there has also been a spike in the number residents who require special needs. To ensure that all the residents, with disabilities and mobility issues or elderly at risk, receive adequate healthcare, we aim to analyse the demand and supply of neighbourhood doctors, to effectively allocate doctors to residences. In this project, we aim to find the proximity to each clinic in a residential sub zone, and this study developed a modified location allocation model for neighbourhood clinics to ensure equitable and efficient access to healthcare services for the elderly in HDB estates.
+                    The location allocation model will take into consideration of the individual resource constraints of the clinics
+                    and the number of elderly in each flat.
+               "),
+                    img(src = "Slide1300500.JPG", height = 720, width = 1280),
+                    img(src = "Slide2300500.JPG", height = 720, width = 1280),
+                    img(src = "Slide3300500.JPG", height = 720, width = 1280),
+                    img(src = "Slide4300500.JPG", height = 720, width = 1280),
+                    img(src = "Slide5300500.JPG", height = 720, width = 1280),
+                    img(src = "Slide6300500.JPG", height = 720, width = 1280)
+                    
+             )
+           )
   )
 )
