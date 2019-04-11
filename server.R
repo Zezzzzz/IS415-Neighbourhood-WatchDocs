@@ -55,7 +55,7 @@ shinyServer(function(input, output, session) {
     output$map <- renderLeaflet({
       leaflet() %>%
         addTiles() %>% 
-        clearShapes() %>%
+        #clearShapes() %>%
         setView(lng = latlon$lon, lat = latlon$lat, zoom = 16)
     })
   })
@@ -74,7 +74,6 @@ shinyServer(function(input, output, session) {
         
         leafletProxy("map") %>%
           clearControls() %>%
-          clearShapes() %>%
           addCircles(new_clinic_location$lng, new_clinic_location$lat, 
                      radius=18, color="black", fillColor = "purple")
       }
@@ -151,36 +150,23 @@ shinyServer(function(input, output, session) {
       } else if(input$analysisType == 'allocation') {
         
         allocateElderly(input$subzone, input$cCapacity, new_clinic_location)
-
-        output$total_elderly_in_subzone <- renderText(
-         paste("<b>", "TOTAL ELDERLY IN ", input$subzone, ": </b>", nrow(mpsz_HDB_split)))
-        
-        output$total_elderly_allocated <- renderText(
-         paste("<b>", "TOTAL ELDERLY ALLOCATED: ", "</b>", nrow(total_allocated_elderly)))
-        
-        output$total_alloc_dist <- renderText(
-         paste("<b>", "TOTAL ALLOCATION DISTANCE: ", "</b>", sum(total_allocated_elderly$allocdist)))
-        
-        output$total_elderly_unallocated <- renderText(
-         paste("<b>", "TOTAL ELDERLY UNALLOCATED: ", "</b>", nrow(total_unallocated_elderly)))
-        
-        total_allocated_elderly <<- total_allocated_elderly %>% mutate(freq = 1)
-        total_unallocated_elderly <<- total_unallocated_elderly %>% mutate(freq = 1)
         
         if(nrow(total_allocated_elderly) > 0) {
+          total_allocated_elderly <<- total_allocated_elderly %>% mutate(freq = 1)
           allocated_aggregated <<- aggregate(total_allocated_elderly$freq, 
                                              by=list(blk_no_street=total_allocated_elderly$blk_no_street), 
                                              FUN=sum) %>% rename(no_of_elderly_allocated = x)
         } else {
-          allocated_aggregated$no_of_elderly_allocated <<- 0
+          allocated_aggregated <<- allocated_aggregated[0,]
         }
         
         if(nrow(total_unallocated_elderly) > 0) {
+          total_unallocated_elderly <<- total_unallocated_elderly %>% mutate(freq = 1)
           unallocated_aggregated <<- aggregate(total_unallocated_elderly$freq, 
                                                by=list(blk_no_street=total_unallocated_elderly$blk_no_street), 
                                                FUN=sum) %>% rename(no_of_elderly_unallocated = x)
         } else {
-          unallocated_aggregated$no_of_elderly_unallocated <<- 0
+          unallocated_aggregated <<- unallocated_aggregated[0,]
         }
         
         colorOnHDB(unallocated_aggregated, allocated_aggregated)
@@ -189,6 +175,18 @@ shinyServer(function(input, output, session) {
         allocation_result[is.na(allocation_result)] <<- 0
         allocation_result <<- allocation_result[order(allocation_result$blk_no_street),]
         output$allocation_result_output <- renderDataTable(allocation_result)
+        
+        output$total_elderly_in_subzone <- renderText(
+          paste("<b>", "TOTAL ELDERLY IN ", input$subzone, ": </b>", nrow(mpsz_HDB_split)))
+        
+        output$total_elderly_allocated <- renderText(
+          paste("<b>", "TOTAL ELDERLY ALLOCATED: ", "</b>", nrow(total_allocated_elderly)))
+        
+        output$total_alloc_dist <- renderText(
+          paste("<b>", "TOTAL ALLOCATION DISTANCE: ", "</b>", sum(total_allocated_elderly$allocdist)))
+        
+        output$total_elderly_unallocated <- renderText(
+          paste("<b>", "TOTAL ELDERLY UNALLOCATED: ", "</b>", nrow(total_unallocated_elderly)))
         
         leafletProxy("map", data = final_results) %>%
          clearControls() %>%
